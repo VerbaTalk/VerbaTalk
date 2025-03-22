@@ -1,0 +1,12 @@
+The extension requires the following icon files in this directory:
+
+1. icon16.png (16x16 pixels)
+2. icon48.png (48x48 pixels)
+3. icon128.png (128x128 pixels)
+
+Please generate these icons using a graphics editor like Photoshop, GIMP, or an online icon generator tool.
+
+The icons should be PNG format with a transparent background.
+
+For development purposes, you can use any placeholder icon, but for production, 
+you should create custom icons that represent your extension's functionality. 
