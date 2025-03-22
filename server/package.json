@@ -19,6 +19,7 @@
   "dependencies": {
     "@google-cloud/text-to-speech": "^5.0.0",
     "aws-sdk": "^2.1000.0",
+    "axios": "^1.8.4",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",

@@ -8,6 +8,7 @@ const { v4: uuidv4 } = require('uuid');
 const { TextToSpeechClient } = require('@google-cloud/text-to-speech');
 const OpenAI = require('openai');
 const AWS = require('aws-sdk');
+const axios = require('axios');
 
 // Load environment variables
 dotenv.config();
@@ -144,83 +145,77 @@ app.get('/tts-models', (req, res) => {
 
 // Text to speech endpoint
 app.post('/tts', async (req, res) => {
+  const { text, model, voice, speed } = req.body;
+  
+  if (!text) {
+    return res.status(400).json({ error: 'Text is required' });
+  }
+  
   try {
-    console.log('TTS request received:', req.body);
-    const { text, model, voice, speed, ttsModel } = req.body;
+    let audioBuffer;
+    let format = 'mp3';
     
-    if (!text) {
-      console.log('Error: Text is required');
-      return res.status(400).json({ error: 'Text is required' });
+    console.log(`TTS request: model=${model}, voice=${voice}, text length=${text.length}`);
+    
+    switch (model) {
+      case 'openai':
+        if (!process.env.OPENAI_API_KEY) {
+          return res.status(401).json({ 
+            error: 'API key missing',
+            message: 'OpenAI API key is required. Please set it in your server environment.' 
+          });
+        }
+        
+        const openaiModel = req.body.openaiTtsModel || 'gpt-4o-mini-tts';
+        audioBuffer = await generateOpenAITTS(text, voice, speed, openaiModel);
+        break;
+        
+      case 'google':
+        if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+          return res.status(401).json({ 
+            error: 'API key missing',
+            message: 'Google credentials are required. Please set GOOGLE_APPLICATION_CREDENTIALS in your server environment.' 
+          });
+        }
+        
+        audioBuffer = await generateGoogleTTS(text, voice, speed);
+        break;
+        
+      default:
+        return res.status(400).json({ error: 'Unsupported TTS model' });
     }
     
-    // For development/testing, create a mock response without API keys
-    const useMockResponse = process.env.NODE_ENV === 'development' && 
-      ((model === 'openai' && (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'YOUR_ACTUAL_OPENAI_API_KEY')) ||
-       (model === 'google' && !process.env.GOOGLE_APPLICATION_CREDENTIALS) ||
-       (model === 'elevenlabs' && !process.env.ELEVENLABS_API_KEY) ||
-       (model === 'amazon' && (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY)));
-    
-    if (useMockResponse) {
-      console.log('Using mock TTS response (no valid API keys configured for ' + model + ')');
-      
-      // Create an empty audio file for testing
-      const filename = `mock-${uuidv4()}.mp3`;
-      const filepath = path.join(audioDir, filename);
-      
-      // Create a 1-byte file (this won't play, but the URL will be valid)
-      await promisify(fs.writeFile)(filepath, Buffer.from([0]));
-      
-      // Return the URL to the audio file
-      const audioUrl = `${req.protocol}://${req.get('host')}/audio/${filename}`;
-      console.log('Generated mock audio URL:', audioUrl);
-      
-      return res.json({ 
-        audioUrl,
-        message: 'This is a mock response. Configure API keys for real TTS.'
-      });
+    // Ensure audio directory exists
+    if (!fs.existsSync(audioDir)) {
+      fs.mkdirSync(audioDir, { recursive: true });
     }
     
-    // Generate a unique filename
-    const filename = `${uuidv4()}.mp3`;
-    const filepath = path.join(audioDir, filename);
+    // Save audio file
+    const filename = `${uuidv4()}.${format}`;
+    const filePath = path.join(audioDir, filename);
     
-    // Generate speech based on selected model
-    let audioContent;
+    console.log(`Saving audio file to: ${filePath} (size: ${audioBuffer.length} bytes)`);
+    fs.writeFileSync(filePath, audioBuffer);
     
-    try {
-      console.log(`Generating speech using ${model} model with voice ${voice}${ttsModel ? ` and TTS model ${ttsModel}` : ''}`);
-      
-      switch (model) {
-        case 'google':
-          audioContent = await generateGoogleTTS(text, voice, speed);
-          break;
-        case 'openai':
-          audioContent = await generateOpenAITTS(text, voice, speed, ttsModel);
-          break;
-        case 'elevenlabs':
-          audioContent = await generateElevenLabsTTS(text, voice, speed);
-          break;
-        case 'amazon':
-          audioContent = await generateAmazonTTS(text, voice, speed);
-          break;
-        default:
-          return res.status(400).json({ error: 'Unsupported model' });
-      }
-      
-      // Write audio file
-      await promisify(fs.writeFile)(filepath, audioContent);
-      
-      // Return the URL to the audio file
-      const audioUrl = `${req.protocol}://${req.get('host')}/audio/${filename}`;
-      console.log('Generated audio URL:', audioUrl);
-      
-      res.json({ audioUrl });
-    } catch (error) {
-      console.error(`Error generating speech with ${model}:`, error);
-      res.status(500).json({ error: error.message });
+    // Verify file was created successfully
+    if (!fs.existsSync(filePath)) {
+      throw new Error('Failed to create audio file');
     }
+    
+    const fileSize = fs.statSync(filePath).size;
+    console.log(`Audio file created successfully. Size: ${fileSize} bytes`);
+    
+    // Return audio URL
+    const audioUrl = `/audio/${filename}`;
+    console.log(`Generated audio URL: ${audioUrl}`);
+    
+    res.json({ 
+      audioUrl,
+      fileSize,
+      format
+    });
   } catch (error) {
-    console.error('TTS Error:', error);
+    console.error('TTS generation error:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -400,6 +395,150 @@ async function generateAmazonTTS(text, voice, speed) {
     console.error('Amazon Polly TTS Error:', error);
     throw new Error(`Amazon Polly TTS Error: ${error.message}`);
   }
+}
+
+// Translation API endpoint
+app.post('/translate', async (req, res) => {
+  const { text, provider, model } = req.body;
+  
+  if (!text) {
+    return res.status(400).json({ error: 'Missing text parameter' });
+  }
+  
+  console.log(`Translation request - Provider: ${provider}, Model: ${model}, Text length: ${text.length}`);
+  
+  try {
+    // Detect language and set target language
+    const detectedLanguage = detectLanguage(text);
+    let targetLanguage = detectedLanguage === 'zh' ? 'en' : 'zh';
+    
+    // Process translation based on provider
+    let translation;
+    
+    switch (provider) {
+      case 'openai':
+        if (!process.env.OPENAI_API_KEY) {
+          return res.status(401).json({ 
+            error: 'API key missing',
+            message: 'OpenAI API key is required. Please set it in your server environment.' 
+          });
+        }
+        translation = await translateWithOpenAI(text, targetLanguage, model);
+        break;
+        
+      case 'gemini':
+        if (!process.env.GEMINI_API_KEY) {
+          return res.status(401).json({ 
+            error: 'API key missing',
+            message: 'Gemini API key is required. Please set it in your server environment.' 
+          });
+        }
+        translation = await translateWithGemini(text, targetLanguage, model);
+        break;
+        
+      case 'zhipu':
+        if (!process.env.ZHIPU_API_KEY) {
+          return res.status(401).json({ 
+            error: 'API key missing',
+            message: 'Zhipu API key is required. Please set it in your server environment.' 
+          });
+        }
+        translation = await translateWithZhipu(text, targetLanguage, model);
+        break;
+        
+      case 'ollama':
+        translation = await translateWithOllama(text, targetLanguage, model);
+        break;
+        
+      default:
+        if (!process.env.OPENAI_API_KEY) {
+          return res.status(401).json({ 
+            error: 'API key missing',
+            message: 'OpenAI API key is required. Please set it in your server environment.' 
+          });
+        }
+        translation = await translateWithOpenAI(text, targetLanguage, model);
+    }
+    
+    res.json({
+      translation,
+      provider,
+      model: model || 'default',
+      source: detectedLanguage,
+      target: targetLanguage
+    });
+  } catch (error) {
+    console.error('Error translating text:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// OpenAI translation
+async function translateWithOpenAI(text, targetLanguage, model = 'gpt-4o') {
+  const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+  });
+  
+  const targetLangName = targetLanguage === 'zh' ? 'Chinese' : 'English';
+  const prompt = `Translate the following text to ${targetLangName}. Only provide the translation, no explanations or additional text:\n\n${text}`;
+  
+  const response = await openai.chat.completions.create({
+    model: model,
+    messages: [
+      {
+        role: 'system',
+        content: 'You are a professional translator that provides high-quality translations.'
+      },
+      {
+        role: 'user',
+        content: prompt
+      }
+    ],
+    temperature: 0.3,
+    max_tokens: text.length * 2 + 50
+  });
+  
+  return response.choices[0].message.content.trim();
+}
+
+// Gemini translation
+async function translateWithGemini(text, targetLanguage, model = 'gemini-1.5-pro') {
+  // Placeholder for Gemini API
+  // Actual implementation would depend on the Gemini API structure
+  throw new Error('Gemini translation not fully implemented yet');
+}
+
+// Zhipu translation
+async function translateWithZhipu(text, targetLanguage, model = 'glm-4') {
+  // Placeholder for Zhipu API
+  // Actual implementation would depend on the Zhipu API structure
+  throw new Error('Zhipu translation not implemented yet');
+}
+
+// Ollama translation
+async function translateWithOllama(text, targetLanguage, model = 'llama3') {
+  try {
+    const ollamaEndpoint = process.env.OLLAMA_ENDPOINT || 'http://localhost:11434';
+    
+    const targetLangName = targetLanguage === 'zh' ? 'Chinese' : 'English';
+    const response = await axios.post(`${ollamaEndpoint}/api/generate`, {
+      model: model,
+      prompt: `Translate the following text to ${targetLangName}. Only provide the translation, no explanations or additional text:\n\n${text}`,
+      stream: false
+    });
+    
+    return response.data.response.trim();
+  } catch (error) {
+    console.error('Ollama translation error:', error);
+    throw new Error(`Ollama translation error: ${error.message}. Make sure Ollama is running at ${process.env.OLLAMA_ENDPOINT || 'http://localhost:11434'}`);
+  }
+}
+
+// Language detection function (simple version)
+function detectLanguage(text) {
+  // Simple language detection: check if text contains Chinese characters
+  const chineseRegex = /[\u4e00-\u9fff]/;
+  return chineseRegex.test(text) ? 'zh' : 'en';
 }
 
 // Start server

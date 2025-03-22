@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "AI Text to Speech",
+  "name": "VerbaTalk",
   "version": "1.0.0",
-  "description": "Convert text to speech using AI models",
+  "description": "Every Word Understood, Every Voice Heard - Translate and speak text with AI",
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png", 

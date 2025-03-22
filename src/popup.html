@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Text to Speech</title>
+  <title>VerbaTalk</title>
   <style>
     :root {
       --primary-color: #5046e4;
@@ -42,6 +42,20 @@
       font-size: 24px;
       font-weight: 600;
       text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    
+    .slogan {
+      margin: 5px 0 0;
+      font-size: 12px;
+      opacity: 0.9;
+      font-weight: 400;
+      letter-spacing: 0.3px;
+    }
+    
+    .language-selector {
+      position: absolute;
+      top: 18px;
+      right: 20px;
     }
     
     .tabs {
@@ -192,6 +206,12 @@
       padding: 12px;
       margin-bottom: 10px;
       border-left: 3px solid var(--primary-light);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .history-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
     }
     
     .history-text {
@@ -200,15 +220,38 @@
       line-height: 1.4;
     }
     
+    .history-translation {
+      font-size: 14px;
+      margin-top: 8px;
+      padding: 8px;
+      background: rgba(108, 99, 255, 0.05);
+      border-radius: 4px;
+      line-height: 1.4;
+      border-left: 2px solid var(--primary-light);
+    }
+    
     .history-meta {
       font-size: 12px;
       color: #777;
       margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .history-tag {
+      display: inline-block;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      background: rgba(108, 99, 255, 0.1);
+      color: var(--primary-color);
     }
     
     .history-actions {
       display: flex;
-      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 10px;
     }
     
     .action-button {
@@ -222,16 +265,57 @@
       display: flex;
       align-items: center;
       gap: 4px;
+      flex: 1;
+      justify-content: center;
+      max-width: 110px;
     }
     
     .action-button:hover {
       background: var(--primary-dark);
     }
     
-    #empty-history {
+    .action-button:disabled {
+      background: #b9b9b9;
+      cursor: wait;
+    }
+    
+    .tab-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    
+    .tab-header h2 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 600;
+    }
+    
+    .secondary-button {
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    
+    .secondary-button:hover {
+      background: var(--primary-dark);
+    }
+    
+    .empty-history {
       text-align: center;
       color: #777;
       padding: 30px 0;
+    }
+    
+    .history-items {
+      max-height: 400px;
+      overflow-y: auto;
     }
     
     /* Icons */
@@ -346,13 +430,14 @@
 </head>
 <body>
   <header class="header">
-    <h1>AI Text to Speech</h1>
+    <h1>VerbaTalk</h1>
+    <p class="slogan">Every Word Understood, Every Voice Heard</p>
     <div id="language-selector" class="language-selector">
       <button id="language-button" class="icon-button">
         🌐
       </button>
       <div id="language-dropdown" class="language-dropdown">
-        <div class="language-option" data-lang="auto">跟随系统</div>
+        <div class="language-option" data-lang="auto">Auto</div>
         <div class="language-option" data-lang="zh-CN">简体中文</div>
         <div class="language-option" data-lang="zh-TW">繁體中文</div>
         <div class="language-option" data-lang="en">English</div>
@@ -360,54 +445,122 @@
     </div>
   </header>
   
-  <div class="tabs">
-    <div class="tab active" data-tab="settings-tab">设置</div>
-    <div class="tab" data-tab="history-tab">历史记录</div>
-  </div>
-  
-  <div id="app">
-    <div id="settings-tab" class="tab-content active">
-      <div class="setting-group">
-        <label for="server-url">服务器 URL</label>
-        <input type="text" id="server-url" class="setting-input" placeholder="例如: http://localhost:3000">
+  <div class="container">
+    <div id="app">
+      <div class="tabs">
+        <div class="tab active" data-tab="settings-tab">Settings</div>
+        <div class="tab" data-tab="history-tab">History</div>
       </div>
       
-      <div class="setting-group">
-        <label for="tts-model">语音引擎</label>
-        <select id="tts-model" class="setting-input">
-          <option value="openai">OpenAI TTS</option>
-          <option value="google">Google TTS</option>
-          <option value="elevenlabs">ElevenLabs</option>
-          <option value="amazon">Amazon Polly</option>
-        </select>
-      </div>
-      
-      <!-- OpenAI TTS Model selection will be inserted here by JS -->
-      
-      <div class="setting-group">
-        <label for="voice">声音</label>
-        <select id="voice" class="setting-input"></select>
-      </div>
-      
-      <div class="setting-group">
-        <label for="speed">语速调节</label>
-        <div class="speed-container">
-          <span>慢</span>
-          <input type="range" id="speed" min="0.5" max="2" step="0.1" value="1">
-          <span>快</span>
-          <div class="speed-value">1.0x</div>
+      <div id="settings-tab" class="tab-content active">
+        <div class="setting-group">
+          <label for="server-url">Server URL</label>
+          <input type="text" id="server-url" class="setting-input" placeholder="e.g. http://localhost:3000">
         </div>
+        
+        <div class="setting-group">
+          <label for="tts-model">TTS Engine</label>
+          <select id="tts-model" class="setting-input">
+            <option value="openai">OpenAI TTS</option>
+            <option value="google">Google TTS</option>
+            <option value="elevenlabs">ElevenLabs</option>
+            <option value="amazon">Amazon Polly</option>
+          </select>
+        </div>
+        
+        <!-- OpenAI TTS Model selection -->
+        <div id="openai-tts-model-container" class="setting-group">
+          <label for="openai-tts-model">OpenAI TTS Model</label>
+          <select id="openai-tts-model" class="setting-input">
+            <option value="gpt-4o-mini-tts">GPT-4o mini TTS</option>
+            <option value="tts-1">TTS-1</option>
+            <option value="tts-1-hd">TTS-1-HD</option>
+          </select>
+        </div>
+        
+        <div class="setting-group">
+          <label for="voice">Voice</label>
+          <select id="voice" class="setting-input"></select>
+        </div>
+        
+        <div class="setting-group">
+          <label for="translation-provider">Translation Provider</label>
+          <select id="translation-provider" class="setting-input">
+            <option value="openai">OpenAI</option>
+            <option value="gemini">Gemini</option>
+            <option value="zhipu">Zhipu</option>
+            <option value="ollama">Ollama</option>
+          </select>
+        </div>
+        
+        <!-- Translation model selection -->
+        <div id="openai-translation-model-container" class="setting-group">
+          <label for="openai-translation-model">OpenAI Translation Model</label>
+          <select id="openai-translation-model" class="setting-input">
+            <option value="gpt-4o">GPT-4o</option>
+            <option value="gpt-4o-mini">GPT-4o mini</option>
+            <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+          </select>
+        </div>
+        
+        <div id="gemini-translation-model-container" class="setting-group" style="display: none;">
+          <label for="gemini-translation-model">Gemini Translation Model</label>
+          <select id="gemini-translation-model" class="setting-input">
+            <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+            <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+          </select>
+        </div>
+        
+        <div id="zhipu-translation-model-container" class="setting-group" style="display: none;">
+          <label for="zhipu-translation-model">Zhipu Translation Model</label>
+          <select id="zhipu-translation-model" class="setting-input">
+            <option value="glm-4">GLM-4</option>
+            <option value="glm-3-turbo">GLM-3-Turbo</option>
+          </select>
+        </div>
+        
+        <div id="ollama-translation-model-container" class="setting-group" style="display: none;">
+          <label for="ollama-translation-model">Ollama Translation Model</label>
+          <select id="ollama-translation-model" class="setting-input">
+            <option value="llama3">Llama-3</option>
+            <option value="mistral">Mistral</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        
+        <div id="ollama-custom-model-container" class="setting-group" style="display: none;">
+          <label for="ollama-custom-model">Custom Model Name</label>
+          <input type="text" id="ollama-custom-model" class="setting-input" placeholder="e.g. mixtral, mistral-medium">
+        </div>
+        
+        <div class="setting-group">
+          <label for="speed">Speech Rate</label>
+          <div class="speed-container">
+            <span>Slow</span>
+            <input type="range" id="speed" min="0.5" max="2" step="0.1" value="1">
+            <span>Fast</span>
+            <div class="speed-value">1.0x</div>
+          </div>
+        </div>
+        
+        <button id="save-settings" class="btn">
+          <span class="icon">💾</span> Save Settings
+        </button>
       </div>
       
-      <button id="save-settings" class="btn">
-        <span class="icon">💾</span> 保存设置
-      </button>
-    </div>
-    
-    <div id="history-tab" class="tab-content">
-      <div id="history-items"></div>
-      <div id="empty-history">
-        尚无历史记录
+      <div id="history-tab" class="tab-content">
+        <div class="tab-header">
+          <h2>History</h2>
+          <button id="export-history" class="secondary-button">Export</button>
+        </div>
+        
+        <div id="empty-history" class="empty-history">
+          <p>No history items yet</p>
+        </div>
+        
+        <div id="history-items" class="history-items">
+          <!-- History items will be added here dynamically -->
+        </div>
       </div>
     </div>
   </div>
