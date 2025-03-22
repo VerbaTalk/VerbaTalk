@@ -493,32 +493,53 @@
           </select>
         </div>
         
-        <!-- Translation model selection -->
+        <!-- OpenAI Translation Model selection -->
         <div id="openai-translation-model-container" class="setting-group">
           <label for="openai-translation-model">OpenAI Translation Model</label>
           <select id="openai-translation-model" class="setting-input">
             <option value="gpt-4o">GPT-4o</option>
             <option value="gpt-4o-mini">GPT-4o mini</option>
             <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+            <option value="custom">Custom</option>
           </select>
         </div>
         
+        <div id="openai-custom-model-container" class="setting-group" style="display: none;">
+          <label for="openai-custom-model">Custom Model Name</label>
+          <input type="text" id="openai-custom-model" class="setting-input" placeholder="e.g. gpt-4-turbo, gpt-4-turbo-preview">
+        </div>
+        
+        <!-- Gemini Translation Model selection -->
         <div id="gemini-translation-model-container" class="setting-group" style="display: none;">
           <label for="gemini-translation-model">Gemini Translation Model</label>
           <select id="gemini-translation-model" class="setting-input">
             <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
             <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+            <option value="custom">Custom</option>
           </select>
         </div>
         
+        <div id="gemini-custom-model-container" class="setting-group" style="display: none;">
+          <label for="gemini-custom-model">Custom Model Name</label>
+          <input type="text" id="gemini-custom-model" class="setting-input" placeholder="e.g. gemini-1.0-pro, gemini-1.5-experimental">
+        </div>
+        
+        <!-- Zhipu Translation Model selection -->
         <div id="zhipu-translation-model-container" class="setting-group" style="display: none;">
           <label for="zhipu-translation-model">Zhipu Translation Model</label>
           <select id="zhipu-translation-model" class="setting-input">
             <option value="glm-4">GLM-4</option>
             <option value="glm-3-turbo">GLM-3-Turbo</option>
+            <option value="custom">Custom</option>
           </select>
         </div>
         
+        <div id="zhipu-custom-model-container" class="setting-group" style="display: none;">
+          <label for="zhipu-custom-model">Custom Model Name</label>
+          <input type="text" id="zhipu-custom-model" class="setting-input" placeholder="e.g. cogview-3, glm-4v">
+        </div>
+        
+        <!-- Ollama Translation Model selection -->
         <div id="ollama-translation-model-container" class="setting-group" style="display: none;">
           <label for="ollama-translation-model">Ollama Translation Model</label>
           <select id="ollama-translation-model" class="setting-input">

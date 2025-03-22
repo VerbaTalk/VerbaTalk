@@ -9,6 +9,9 @@ document.addEventListener('DOMContentLoaded', function() {
   // Add event listeners
   document.getElementById('save-settings').addEventListener('click', saveSettings);
   document.getElementById('translation-provider').addEventListener('change', handleTranslationProviderChange);
+  document.getElementById('openai-translation-model').addEventListener('change', handleOpenAIModelChange);
+  document.getElementById('gemini-translation-model').addEventListener('change', handleGeminiModelChange);
+  document.getElementById('zhipu-translation-model').addEventListener('change', handleZhipuModelChange);
   document.getElementById('ollama-translation-model').addEventListener('change', handleOllamaModelChange);
   document.getElementById('tts-model').addEventListener('change', function() {
     updateVoiceOptions(this.value);
@@ -62,6 +65,9 @@ function loadSettings() {
     openaiTtsModel: 'gpt-4o-mini-tts',
     translationProvider: 'openai',
     translationModel: 'gpt-4o',
+    openaiCustomModel: '',
+    geminiCustomModel: '',
+    zhipuCustomModel: '',
     ollamaCustomModel: ''
   }, function(items) {
     console.log('Loaded settings:', items);
@@ -96,22 +102,40 @@ function loadSettings() {
     // Set translation model based on provider
     switch (items.translationProvider) {
       case 'openai':
-        document.getElementById('openai-translation-model').value = items.translationModel;
+        if (items.translationModel === 'custom' || !['gpt-4o', 'gpt-4o-mini', 'gpt-3.5-turbo'].includes(items.translationModel)) {
+          document.getElementById('openai-translation-model').value = 'custom';
+          document.getElementById('openai-custom-model-container').style.display = 'block';
+          document.getElementById('openai-custom-model').value = items.translationModel || items.openaiCustomModel;
+        } else {
+          document.getElementById('openai-translation-model').value = items.translationModel;
+        }
         break;
       case 'gemini':
-        document.getElementById('gemini-translation-model').value = items.translationModel;
+        if (items.translationModel === 'custom' || !['gemini-1.5-pro', 'gemini-1.5-flash'].includes(items.translationModel)) {
+          document.getElementById('gemini-translation-model').value = 'custom';
+          document.getElementById('gemini-custom-model-container').style.display = 'block';
+          document.getElementById('gemini-custom-model').value = items.translationModel || items.geminiCustomModel;
+        } else {
+          document.getElementById('gemini-translation-model').value = items.translationModel;
+        }
         break;
       case 'zhipu':
-        document.getElementById('zhipu-translation-model').value = items.translationModel;
+        if (items.translationModel === 'custom' || !['glm-4', 'glm-3-turbo'].includes(items.translationModel)) {
+          document.getElementById('zhipu-translation-model').value = 'custom';
+          document.getElementById('zhipu-custom-model-container').style.display = 'block';
+          document.getElementById('zhipu-custom-model').value = items.translationModel || items.zhipuCustomModel;
+        } else {
+          document.getElementById('zhipu-translation-model').value = items.translationModel;
+        }
         break;
       case 'ollama':
-        if (items.translationModel === 'llama3' || items.translationModel === 'mistral') {
-          document.getElementById('ollama-translation-model').value = items.translationModel;
-        } else {
+        if (items.translationModel === 'custom' || !['llama3', 'mistral'].includes(items.translationModel)) {
           document.getElementById('ollama-translation-model').value = 'custom';
+          document.getElementById('ollama-custom-model-container').style.display = 'block';
           document.getElementById('ollama-custom-model').value = items.translationModel || items.ollamaCustomModel;
+        } else {
+          document.getElementById('ollama-translation-model').value = items.translationModel;
         }
-        handleOllamaModelChange();
         break;
     }
   });
@@ -133,30 +157,45 @@ function saveSettings() {
   
   // Get translation model based on provider
   let translationModel = '';
+  let openaiCustomModel = '';
+  let geminiCustomModel = '';
+  let zhipuCustomModel = '';
+  let ollamaCustomModel = '';
   
   switch (translationProvider) {
     case 'openai':
-      translationModel = document.getElementById('openai-translation-model').value;
+      if (document.getElementById('openai-translation-model').value === 'custom') {
+        translationModel = document.getElementById('openai-custom-model').value.trim();
+        openaiCustomModel = translationModel;
+      } else {
+        translationModel = document.getElementById('openai-translation-model').value;
+      }
       break;
     case 'gemini':
-      translationModel = document.getElementById('gemini-translation-model').value;
+      if (document.getElementById('gemini-translation-model').value === 'custom') {
+        translationModel = document.getElementById('gemini-custom-model').value.trim();
+        geminiCustomModel = translationModel;
+      } else {
+        translationModel = document.getElementById('gemini-translation-model').value;
+      }
       break;
     case 'zhipu':
-      translationModel = document.getElementById('zhipu-translation-model').value;
+      if (document.getElementById('zhipu-translation-model').value === 'custom') {
+        translationModel = document.getElementById('zhipu-custom-model').value.trim();
+        zhipuCustomModel = translationModel;
+      } else {
+        translationModel = document.getElementById('zhipu-translation-model').value;
+      }
       break;
     case 'ollama':
       if (document.getElementById('ollama-translation-model').value === 'custom') {
         translationModel = document.getElementById('ollama-custom-model').value.trim();
+        ollamaCustomModel = translationModel;
       } else {
         translationModel = document.getElementById('ollama-translation-model').value;
       }
       break;
   }
-  
-  // Save custom Ollama model name
-  const ollamaCustomModel = translationProvider === 'ollama' && 
-                           document.getElementById('ollama-translation-model').value === 'custom' ? 
-                           document.getElementById('ollama-custom-model').value.trim() : '';
   
   chrome.storage.sync.set({
     serverUrl,
@@ -166,6 +205,9 @@ function saveSettings() {
     openaiTtsModel,
     translationProvider,
     translationModel,
+    openaiCustomModel,
+    geminiCustomModel,
+    zhipuCustomModel,
     ollamaCustomModel
   }, function() {
     console.log('Settings saved:', {
@@ -176,6 +218,9 @@ function saveSettings() {
       openaiTtsModel,
       translationProvider,
       translationModel,
+      openaiCustomModel,
+      geminiCustomModel,
+      zhipuCustomModel,
       ollamaCustomModel
     });
     
@@ -499,21 +544,27 @@ function handleTranslationProviderChange() {
   
   // Hide all model containers
   document.getElementById('openai-translation-model-container').style.display = 'none';
+  document.getElementById('openai-custom-model-container').style.display = 'none';
   document.getElementById('gemini-translation-model-container').style.display = 'none';
+  document.getElementById('gemini-custom-model-container').style.display = 'none';
   document.getElementById('zhipu-translation-model-container').style.display = 'none';
+  document.getElementById('zhipu-custom-model-container').style.display = 'none';
   document.getElementById('ollama-translation-model-container').style.display = 'none';
   document.getElementById('ollama-custom-model-container').style.display = 'none';
   
-  // Show relevant container
+  // Show container for selected provider
   switch (provider) {
     case 'openai':
       document.getElementById('openai-translation-model-container').style.display = 'block';
+      handleOpenAIModelChange();
       break;
     case 'gemini':
       document.getElementById('gemini-translation-model-container').style.display = 'block';
+      handleGeminiModelChange();
       break;
     case 'zhipu':
       document.getElementById('zhipu-translation-model-container').style.display = 'block';
+      handleZhipuModelChange();
       break;
     case 'ollama':
       document.getElementById('ollama-translation-model-container').style.display = 'block';
@@ -522,11 +573,36 @@ function handleTranslationProviderChange() {
   }
 }
 
+// Handle OpenAI model change
+function handleOpenAIModelChange() {
+  if (document.getElementById('openai-translation-model').value === 'custom') {
+    document.getElementById('openai-custom-model-container').style.display = 'block';
+  } else {
+    document.getElementById('openai-custom-model-container').style.display = 'none';
+  }
+}
+
+// Handle Gemini model change
+function handleGeminiModelChange() {
+  if (document.getElementById('gemini-translation-model').value === 'custom') {
+    document.getElementById('gemini-custom-model-container').style.display = 'block';
+  } else {
+    document.getElementById('gemini-custom-model-container').style.display = 'none';
+  }
+}
+
+// Handle Zhipu model change
+function handleZhipuModelChange() {
+  if (document.getElementById('zhipu-translation-model').value === 'custom') {
+    document.getElementById('zhipu-custom-model-container').style.display = 'block';
+  } else {
+    document.getElementById('zhipu-custom-model-container').style.display = 'none';
+  }
+}
+
 // Handle Ollama model change
 function handleOllamaModelChange() {
-  const ollamaModel = document.getElementById('ollama-translation-model').value;
-  
-  if (ollamaModel === 'custom') {
+  if (document.getElementById('ollama-translation-model').value === 'custom') {
     document.getElementById('ollama-custom-model-container').style.display = 'block';
   } else {
     document.getElementById('ollama-custom-model-container').style.display = 'none';
