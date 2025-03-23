@@ -66,9 +66,9 @@ export default {
         provider: 'openai',
         models: {
           openai: 'gpt-4o',
-          gemini: 'gemini-1.5-pro',
+          gemini: 'gemini-2.0-pro',
           zhipu: 'glm-4',
-          ollama: 'llama3'
+          ollama: 'llama3.3'
         },
         customModels: {
           openai: '',
@@ -114,16 +114,16 @@ export default {
         
         // Determine if we have a custom model
         const isCustomOpenAI = items.translationModel === 'custom' || 
-          !['gpt-4o', 'gpt-4o-mini', 'gpt-3.5-turbo'].includes(items.translationModel);
+          !['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-4-vision-preview', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k'].includes(items.translationModel);
           
         const isCustomGemini = items.translationModel === 'custom' || 
-          !['gemini-1.5-pro', 'gemini-1.5-flash'].includes(items.translationModel);
+          !['gemini-2.0-pro', 'gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-1.5-ultra'].includes(items.translationModel);
           
         const isCustomZhipu = items.translationModel === 'custom' || 
-          !['glm-4', 'glm-3-turbo'].includes(items.translationModel);
+          !['glm-4', 'glm-4v', 'glm-4-9b-chat', 'glm-4-9b-chat-1m', 'glm-3-turbo', 'chatglm-turbo'].includes(items.translationModel);
           
         const isCustomOllama = items.translationModel === 'custom' || 
-          !['llama3', 'mistral'].includes(items.translationModel);
+          !['llama3.3', 'llama3.2', 'llama3.1', 'gemma3:1b', 'mixtral', 'gemma2'].includes(items.translationModel);
         
         // Set the model based on provider
         if (items.translationProvider === 'openai') {

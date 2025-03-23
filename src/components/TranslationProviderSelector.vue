@@ -158,15 +158,31 @@ export default {
     provider(newValue) {
       this.selectedProvider = newValue;
     },
-    modelValues: {
+    models: {
       handler(newValue) {
-        this.modelValues = { ...newValue };
+        // 避免无限循环：只有当值真正变化时才更新
+        const currentKeys = Object.keys(this.modelValues);
+        const newKeys = Object.keys(newValue);
+        
+        if (currentKeys.length !== newKeys.length || 
+            newKeys.some(key => this.modelValues[key] !== newValue[key])) {
+          // 创建一个全新的对象而不是修改现有对象
+          this.modelValues = JSON.parse(JSON.stringify(newValue));
+        }
       },
       deep: true
     },
-    customValues: {
+    customModels: {
       handler(newValue) {
-        this.customValues = { ...newValue };
+        // 避免无限循环：只有当值真正变化时才更新
+        const currentKeys = Object.keys(this.customValues);
+        const newKeys = Object.keys(newValue);
+        
+        if (currentKeys.length !== newKeys.length || 
+            newKeys.some(key => this.customValues[key] !== newValue[key])) {
+          // 创建一个全新的对象而不是修改现有对象
+          this.customValues = JSON.parse(JSON.stringify(newValue));
+        }
       },
       deep: true
     }

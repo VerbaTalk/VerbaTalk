@@ -62,4 +62,12 @@ export default {
     }
   }
 };
-</script> 
+</script>
+
+<style scoped>
+.custom-input:focus {
+  border-color: var(--primary-light);
+  border-left: 3px solid var(--primary-light);
+  box-shadow: 0 0 0 2px rgba(108, 99, 255, 0.25);
+}
+</style> 

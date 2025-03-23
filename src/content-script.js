@@ -855,8 +855,19 @@ function showNotification(message, type = 'info') {
 
 // 添加到历史记录
 function addToHistory(text, type, model, audioUrl, translation) {
+  // 检查chrome.storage是否已定义
+  if (!chrome || !chrome.storage || !chrome.storage.local) {
+    console.error('Chrome storage API not available');
+    return;
+  }
+  
   chrome.storage.local.get({ history: [] }, function(data) {
-    const history = data.history;
+    if (chrome.runtime.lastError) {
+      console.error('Error accessing chrome.storage.local:', chrome.runtime.lastError);
+      return;
+    }
+    
+    const history = data.history || [];
     
     const historyItem = {
       text,
@@ -880,7 +891,13 @@ function addToHistory(text, type, model, audioUrl, translation) {
     
     history.push(historyItem);
     
-    chrome.storage.local.set({ history });
+    chrome.storage.local.set({ history }, function() {
+      if (chrome.runtime.lastError) {
+        console.error('Error saving to chrome.storage.local:', chrome.runtime.lastError);
+      } else {
+        console.log('History item saved successfully');
+      }
+    });
   });
 }
 
