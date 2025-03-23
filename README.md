@@ -1,6 +1,6 @@
 # VerbaTalk
 
-![VerbaTalk Logo](icons/icon128.png)
+![VerbaTalk Logo](https://github.com/VerbaTalk/VerbaTalk/blob/main/public/icons/icon128.png)
 
 **Every Word Understood, Every Voice Heard**
 
