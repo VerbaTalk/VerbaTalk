@@ -1,7 +1,7 @@
 {
-  "name": "ai-text-to-speech",
+  "name": "verbatalk",
   "version": "1.0.0",
-  "description": "Browser extension for converting text to speech using AI models",
+  "description": "A Chrome extension that combines text-to-speech and translation capabilities to break language barriers",
   "main": "vite.config.js",
   "scripts": {
     "dev": "vite",
@@ -14,14 +14,17 @@
     "tts",
     "ai",
     "browser-extension",
-    "chrome-extension"
+    "chrome-extension",
+    "translation"
   ],
   "author": "",
   "license": "MIT",
   "dependencies": {
     "@vitejs/plugin-vue": "^5.0.0",
     "vue": "^3.3.0",
-    "pinia": "^2.1.0"
+    "pinia": "^2.1.0",
+    "axios": "^1.6.2",
+    "howler": "^2.2.4"
   },
   "devDependencies": {
     "vite": "^5.0.0",

@@ -36,19 +36,13 @@ export default defineConfig({
           resolve(__dirname, 'dist/manifest.json')
         );
 
-        // Copy popup.html with corrected script paths 
+        // Copy popup.html to dist/popup.html
         try {
-          // 使用src目录下的popup.html而不是根目录的
           const popupHtml = readFileSync(resolve(__dirname, 'src/popup.html'), 'utf8');
-          // Replace the script source to use the built file
-          const processedHtml = popupHtml.replace(
-            '<script type="module" src="./popup.js"></script>',
-            '<script type="module" src="popup.js"></script>'
-          );
-          writeFileSync(resolve(__dirname, 'dist/popup.html'), processedHtml);
-          console.log('Popup HTML copied successfully from src directory');
+          writeFileSync(resolve(__dirname, 'dist/popup.html'), popupHtml);
+          console.log('Vue popup HTML copied successfully');
         } catch (err) {
-          console.error('Error processing popup.html:', err);
+          console.error('Error processing popup HTML file:', err);
         }
         
         // Ensure content-script.js is included by manually copying it
@@ -74,8 +68,8 @@ export default defineConfig({
       },
       output: {
         entryFileNames: '[name].js',
-        chunkFileNames: '[name].js',
-        assetFileNames: '[name].[ext]',
+        chunkFileNames: 'chunks/[name].[hash].js',
+        assetFileNames: 'assets/[name].[hash].[ext]',
       },
     },
   },

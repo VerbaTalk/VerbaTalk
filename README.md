@@ -10,7 +10,7 @@ VerbaTalk is a powerful Chrome extension that combines text-to-speech and transl
 
 - **Text-to-Speech**: Convert selected text to natural-sounding speech using OpenAI's and other providers' TTS models
 - **Translation**: Translate text between languages using various AI providers (OpenAI, Gemini, Zhipu, Ollama)
-- **Model Selection**: Choose from different AI models for both TTS and translation
+- **Model Selection**: Choose from different AI models for both TTS and translation, including the latest models like GPT-4o and Gemini 2.0
 - **Voice Options**: Multiple voice options to personalize your listening experience
 - **Speed Control**: Adjust speech speed to suit your preferences
 - **History Management**: Save and manage your translation and TTS history
@@ -20,7 +20,7 @@ VerbaTalk is a powerful Chrome extension that combines text-to-speech and transl
 
 ### User Installation
 
-1. Download the latest release from the [Chrome Web Store](#) or [Releases](https://github.com/yourusername/VerbaTalk/releases) page
+1. Download the latest release from the [Chrome Web Store](#) or [Releases](#) page
 2. If using a local version:
    - Extract the downloaded ZIP file
    - Open Chrome and navigate to `chrome://extensions/`
@@ -102,7 +102,7 @@ The server provides two main endpoints:
   "model": "openai",
   "voice": "alloy",
   "speed": 1.0,
-  "openaiTtsModel": "gpt-4o-mini-tts"
+  "openaiTtsModel": "tts-1"
 }
 ```
 
@@ -173,9 +173,9 @@ To add a new translation provider:
 
 2. Add the provider to the switch statement in the `/translate` endpoint handler
 
-3. Update the frontend UI in `src/popup.html` to include the new provider option
+3. Update the frontend UI in `src/components/TranslationProviderSelector.vue` to include the new provider option
 
-4. Add the corresponding logic in `src/popup.js` to handle the new provider selection
+4. Add the corresponding logic to handle the new provider selection
 
 ## Adding New TTS Providers
 
@@ -191,9 +191,9 @@ To add a new TTS provider:
 
 2. Add the provider to the switch statement in the `/tts` endpoint handler
 
-3. Update the frontend UI in `src/popup.html` to include the new provider option
+3. Update the frontend UI in `src/components/TtsModelSelector.vue` to include the new provider option
 
-4. Add the corresponding logic in `src/popup.js` to handle the new provider selection
+4. Add the corresponding logic to handle the new provider selection
 
 ## Contributing
 
@@ -207,4 +207,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 - OpenAI for their GPT and TTS models
 - Google for their Gemini models
+- Zhipu AI for their GLM models
+- Ollama for their open source model hosting platform
 - The amazing open-source community 
