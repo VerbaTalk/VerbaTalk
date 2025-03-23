@@ -40,3 +40,6 @@ server/audio/
 
 # Cache files
 .cache/ 
+
+dist.crx
+dist.pem
