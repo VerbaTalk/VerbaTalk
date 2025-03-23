@@ -13,15 +13,19 @@
     
     <div class="history-actions">
       <button class="action-button" @click.stop="playAudio">
-        <span>🔊</span> Play
+        <span>🔊</span>
       </button>
       
       <button class="action-button" @click.stop="translate">
-        <span>🔄</span> {{ item.translation ? 'Re-translate' : 'Translate' }}
+        <span>🔄</span>
       </button>
       
       <button class="action-button" @click.stop="copyText">
-        <span>📋</span> {{ copying ? 'Copied' : 'Copy' }}
+        <span>{{ copying ? '✓' : '📋' }}</span>
+      </button>
+      
+      <button class="action-button delete-button" @click.stop="deleteItem">
+        <span>🗑️</span>
       </button>
     </div>
   </div>
@@ -72,7 +76,23 @@ export default {
           this.copying = false;
         }, 2000);
       });
+    },
+    
+    deleteItem() {
+      if (confirm('Delete this history item?')) {
+        this.$emit('delete', { index: this.index });
+      }
     }
   }
 }
-</script> 
+</script>
+
+<style scoped>
+.delete-button {
+  background-color: #e53935;
+}
+
+.delete-button:hover {
+  background-color: #c62828;
+}
+</style> 

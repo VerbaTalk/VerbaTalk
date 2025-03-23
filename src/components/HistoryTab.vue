@@ -2,9 +2,14 @@
   <div class="history-tab">
     <div class="tab-header">
       <h2>History</h2>
-      <button id="export-history" class="secondary-button" @click="exportHistory">
-        Export
-      </button>
+      <div class="header-buttons">
+        <button id="clear-history" class="secondary-button danger-button" @click="clearHistory">
+          Clear
+        </button>
+        <button id="export-history" class="secondary-button" @click="exportHistory">
+          Export
+        </button>
+      </div>
     </div>
     
     <div v-if="history.length === 0" id="empty-history" class="empty-history">
@@ -20,6 +25,7 @@
         @play="playAudio"
         @translate="translateText"
         @copy="copyText"
+        @delete="deleteHistoryItem"
       />
     </div>
   </div>
@@ -140,7 +146,70 @@ export default {
       
       // Clean up
       URL.revokeObjectURL(url);
+    },
+    
+    clearHistory() {
+      if (this.history.length === 0) {
+        return;
+      }
+      
+      if (confirm('Are you sure you want to clear all history?')) {
+        // Clear history in local storage
+        chrome.storage.local.set({ history: [] }, () => {
+          if (chrome.runtime.lastError) {
+            console.error('Error clearing history:', chrome.runtime.lastError);
+            alert('Failed to clear history');
+          } else {
+            // Update local state
+            this.history = [];
+            console.log('History cleared successfully');
+          }
+        });
+      }
+    },
+    
+    deleteHistoryItem({ index }) {
+      // 获取实际索引（因为显示列表是反转的）
+      const actualIndex = this.history.length - 1 - index;
+      
+      if (actualIndex >= 0 && actualIndex < this.history.length) {
+        // 创建一个新的历史记录数组，不包含要删除的项目
+        const updatedHistory = [...this.history];
+        updatedHistory.splice(actualIndex, 1);
+        
+        // 保存更新后的历史记录
+        chrome.storage.local.set({ history: updatedHistory }, () => {
+          if (chrome.runtime.lastError) {
+            console.error('Error deleting history item:', chrome.runtime.lastError);
+            alert('Failed to delete history item');
+          } else {
+            // 更新本地状态
+            this.history = updatedHistory;
+            console.log('History item deleted successfully');
+          }
+        });
+      }
     }
   }
 }
-</script> 
+</script>
+
+<style scoped>
+.header-buttons {
+  display: flex;
+  gap: 10px;
+  margin-right: 5px;
+}
+
+.header-buttons button {
+  margin-left: 5px;
+}
+
+.danger-button {
+  background: #e53935;
+}
+
+.danger-button:hover {
+  background: #c62828;
+}
+</style> 
